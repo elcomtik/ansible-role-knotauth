@@ -1,7 +1,7 @@
 ---
 # Fetch dependencies (platform-specific)
 - name: install dependencies
-  apt: pkg={{ item }} update_cache=yes cache_valid_time=86400 state=present
+  ansible.builtin.apt: pkg={{ item }} update_cache=yes cache_valid_time=86400 state=present
   with_items:
     - gcc 
     - make
@@ -13,7 +13,7 @@
     - libjansson-dev
   when: ansible_os_family == "Debian" 
 - name: dependencies (FreeBSD)
-  pkgng: name={{ item }} state=present
+  community.general.pkgng: name={{ item }} state=present
   with_items:
     - security/nettle
     - security/gnutls
@@ -24,21 +24,25 @@
 
 # Clone and build from sources
 - name: git clone
-  git: repo=http://gitlab.labs.nic.cz/labs/knot.git dest=/usr/local/src/knot version={{ knot_git_branch }} update=yes
+  ansible.builtin.git: repo=http://gitlab.labs.nic.cz/labs/knot.git dest=/usr/local/src/knot version={{ knot_git_branch }} update=yes
 - name: configure
-  shell: autoreconf -if && ./configure --prefix={{ knot_install_dir }} chdir=/usr/local/src/knot creates=/usr/local/src/knot/Makefile
+  ansible.builtin.shell: autoreconf -if && ./configure --prefix={{ knot_install_dir }} chdir=/usr/local/src/knot creates=/usr/local/src/knot/Makefile
 - name: build
-  command: make -j{{ansible_processor_count}} chdir=/usr/local/src/knot creates=/usr/local/src/knot/src/knotd
+  # possible ambiguous replacement: command : ansible.builtin.command | community.ciscosmb.command | community.routeros.command
+  ansible.builtin.command: make -j{{ansible_processor_count}} chdir=/usr/local/src/knot creates=/usr/local/src/knot/src/knotd
 - name: install
-  command: make install chdir=/usr/local/src/knot creates={{ knot_install_dir }}/sbin/knotd
+  # possible ambiguous replacement: command : ansible.builtin.command | community.ciscosmb.command | community.routeros.command
+  ansible.builtin.command: make install chdir=/usr/local/src/knot creates={{ knot_install_dir }}/sbin/knotd
 
 # Post-installation
 - name: add knot group
-  group:
+  # possible ambiguous replacement: group : ansible.builtin.group | awx.awx.group | microsoft.ad.group
+  ansible.builtin.group:
     name={{ knot_group }}
     comment="Knot DNS"
 - name: add knot user
-  user:
+  # possible ambiguous replacement: user : ansible.builtin.user | awx.awx.user | cisco.dnac.user | inspur.ispim.user | inspur.sm.user | lowlydba.sqlserver.user | microsoft.ad.user | sensu.sensu_go.user | theforeman.foreman.user | vultr.cloud.user
+  ansible.builtin.user:
     name={{ knot_user }}
     comment="Knot DNS"
     home={{ knot_install_dir }}
@@ -47,7 +51,7 @@
     system=yes
 
 - name: make sure directories are writeable
-  file: path={{ item }}  state=directory owner={{ knot_user }}
+  ansible.builtin.file: path={{ item }}  state=directory owner={{ knot_user }}
   with_items:
     - "{{ knot_install_dir }}/etc/knot"
     - "{{ knot_install_dir }}/var/lib/knot"

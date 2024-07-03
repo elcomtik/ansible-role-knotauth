@@ -1,18 +1,19 @@
 ---
 - name: install from source
-  include: from_source.yml
+  ansible.builtin.include_tasks: from_source.yml
   when: knot_from_source
+
 - name: install from packages
-  include: from_pkgs.yml
+  ansible.builtin.include_tasks: from_pkgs.yml
   when: not knot_from_source
 
 # Post-install
 - name: set config path (FreeBSD)
-  lineinfile: dest=/etc/rc.conf regexp='^knot_config=' line="knot_config={{ knot_install_dir }}/etc/knot/knot.conf"
+  ansible.builtin.lineinfile: dest=/etc/rc.conf regexp='^knot_config=' line="knot_config={{ knot_install_dir }}/etc/knot/knot.conf"
   when: ansible_os_family == "FreeBSD"
 
 - name: ensure configuration directory exists
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ knot_install_dir }}/etc/knot"
     owner: "{{ knot_user }}"
@@ -20,7 +21,7 @@
 
 # Configuration
 - name: configure knot
-  template:
+  ansible.builtin.template:
     src: knot.conf.j2
     dest: "{{ knot_install_dir }}/etc/knot/knot.conf"
     mode: 0640
@@ -30,18 +31,19 @@
   notify: restart knot
   tags: dns
 - name: enable knot
-  service:
+  ansible.builtin.service:
     name: "{{ knot_daemon }}"
     enabled: True
     state: started
 
 - name: ensure lib directory has the right permissions
-  file:
+  ansible.builtin.file:
     path: "/var/lib/knot"
     owner: "{{ knot_user  }}"
     group: "{{ knot_group }}"
     state: directory
 
-- include: zones.yml
+- name: manage zones
+  ansible.builtin.include_tasks: zones.yml
   tags: zones
   when: knot_zones is defined

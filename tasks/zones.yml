@@ -1,5 +1,5 @@
 - name: ensure zones storage directory exists
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ item.storage }}"
     recurse: yes
@@ -8,7 +8,7 @@
   with_items: "{{ knot_zones }}"
 
 - name: apply zone files
-  copy:
+  ansible.builtin.copy:
     src: "{{ item.src_file }}"
     dest: "{{ item.storage }}/{{ item.file }}"
     owner: "{{ knot_user }}"
@@ -17,17 +17,17 @@
   when: item.src_file is defined
 
 - name: check zone files integrity
-  raw: "knotc zone-check {{ item.name }}"
+  ansible.builtin.raw: "knotc zone-check {{ item.name }}"
   register: "results"
   with_items: "{{ knot_zones }}"
   ignore_errors: yes
 
-- fail:
+- ansible.builtin.fail:
     msg: "A zone seems to be not loadable, please check. Trace:\n {{ item.stderr }}"
   when: item.rc != 0
   with_items: "{{ results.results }}"
 
 - name: reload knot
-  service:
+  ansible.builtin.service:
     name: "{{ knot_daemon }}"
     state: reloaded
